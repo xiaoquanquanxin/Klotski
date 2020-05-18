@@ -1,0 +1,407 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport"
+          content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>四大名捕斗詹皇</title>
+    <style>
+        #wrap {
+            margin: 20px auto;
+            width: 240px;
+            height: 300px;
+            outline: 1px solid crimson;
+            border-radius: 8px;
+            position: relative;
+        }
+        
+        #wrap > div {
+            cursor: pointer;
+            text-align: center;
+            border-radius: 10px;
+            border: 1px solid orange;
+            background-color: #ab9688;
+            box-sizing: border-box;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            position: absolute;
+            z-index: +2;
+        }
+        
+        
+        /*敷*/
+        #wrap > div:hover {
+            background-color: #c9b0a0;
+        }
+        
+        /*高亮*/
+        #wrap > div.highlight {
+            border: 2px solid skyblue;
+            background-color: #ddc2b0;
+        }
+        
+        
+        .zhangfei, .bing {
+            height: 60px;
+            font-size: 20px;
+        }
+        
+        .bing, .guanyu, .zhaoyun, .huangzhong, .machao {
+            width: 60px;
+            font-size: 20px;
+        }
+        
+        .caocao, .guanyu, .zhaoyun, .huangzhong, .machao {
+            height: 120px;
+            font-size: 30px;
+        }
+        
+        .caocao, .zhangfei {
+            width: 120px;
+            font-size: 40px;
+        }
+        
+        .zhangfei {
+            font-size: 30px;
+        }
+        
+        #wrap > .optiondiv {
+            border: none;
+            animation: james infinite 4s;
+            z-index: 1;
+        }
+        
+        @keyframes james {
+            0% {
+                background-color: white;
+            }
+            50% {
+                background-color: #ffd3cf;
+            }
+            100% {
+                background-color: white;
+            }
+        }
+    </style>
+</head>
+<body>
+<center><p>四大名捕斗詹皇</p></center>
+<div id="wrap">
+</div>
+<script>
+    const basicData = [
+        {
+            name: '慕斯',
+            className: 'caocao',
+            position: [1, 0],
+            placeEnd: [2, 2]
+        },
+        {
+            name: '库里',
+            className: 'zhangfei',
+            position: [1, 2],
+            placeEnd: [2, 1]
+        },
+        {
+            name: '汤<br>神',
+            className: 'guanyu',
+            position: [0, 0],
+            placeEnd: [1, 2]
+        },
+        {
+            name: '格<br>林',
+            className: 'zhaoyun',
+            position: [3, 0],
+            placeEnd: [1, 2]
+        },
+        {
+            name: '一<br>哥',
+            className: 'huangzhong',
+            position: [0, 2],
+            placeEnd: [1, 2]
+        },
+        {
+            name: '死<br>神',
+            className: 'machao',
+            position: [3, 2],
+            placeEnd: [1, 2]
+        },
+        {
+            name: '库克',
+            className: 'bing',
+            position: [0, 4],
+            placeEnd: [1, 1]
+        },
+        {
+            name: '利文',
+            className: 'bing',
+            position: [1, 3],
+            placeEnd: [1, 1]
+        },
+        {
+            name: '考神',
+            className: 'bing',
+            position: [2, 3],
+            placeEnd: [1, 1]
+        },
+        {
+            name: '鲁尼',
+            className: 'bing',
+            position: [3, 4],
+            placeEnd: [1, 1]
+        },
+    ];
+
+    const basicPositionRate = 60;
+
+    function preventDefault(e){
+        e.stopPropagation();
+        e.preventDefault();
+    }
+
+    //  判断边界
+    function circumscription(data){
+        // console.log(data);
+        const circumscriptionData = {};
+        //  上
+        circumscriptionData.top = (data.position[1] > 0);
+        //  下
+        circumscriptionData.bottom = (data.position[1] + data.placeEnd[1] < 5);
+        //  左
+        circumscriptionData.left = (data.position[0] > 0);
+        //  右
+        circumscriptionData.right = (data.position[0] + data.placeEnd[0] < 4);
+        return circumscriptionData;
+    }
+
+    //  遍历棋子的位置,判断重合
+    /**
+     *
+     * @circumscriptionData:Object : 能够移动的位置
+     *
+     * */
+    function circulationPosition(arr, index, circumscriptionData){
+        const data = arr[index];
+        const circulationArr = arr.slice(0, index).concat(arr.slice(index + 1));
+        // console.log(data);
+        // console.log(circumscriptionData);
+        //  结果，上下左右
+        const resultData = { top: true, bottom: true, left: true, right: true };
+        circulationArr.forEach(item => {
+            //  如果没有超过上边界
+            if (resultData.top) {
+                resultData.top = circumscriptionData.top && coincideTop(circumscriptionData, item, data);
+            }
+            //  下
+            if (resultData.bottom) {
+                resultData.bottom = circumscriptionData.bottom && coincideBottom(circumscriptionData, item, data);
+            }
+            //  左
+            if (resultData.left) {
+                resultData.left = circumscriptionData.left && coincideLeft(circumscriptionData, item, data);
+            }
+            //  左
+            if (resultData.right) {
+                resultData.right = circumscriptionData.right && coincideRight(circumscriptionData, item, data);
+            }
+        });
+        return resultData;
+    }
+
+    //  上，重合
+    function coincideTop(circumscriptionData, item, data){
+        //  棋子将 预 向上移动一格
+        const upData = getItemPosition(data);
+        upData.top--;
+        upData.bottom--;
+        //  被循环的棋子的位置
+        const itemData = getItemPosition(item);
+        return coincide(itemData, upData);
+    }
+
+    //  下，重合
+    function coincideBottom(circumscriptionData, item, data){
+        //  棋子将 预 向下移动一格
+        const downData = getItemPosition(data);
+        downData.top++;
+        downData.bottom++;
+        //  被循环的棋子的位置
+        const itemData = getItemPosition(item);
+        return coincide(itemData, downData);
+    }
+
+    //  左，重合
+    function coincideLeft(circumscriptionData, item, data){
+        //  棋子将 预 向左移动一格
+        const leftData = getItemPosition(data);
+        leftData.left--;
+        leftData.right--;
+        //  被循环的棋子的位置
+        const itemData = getItemPosition(item);
+        return coincide(itemData, leftData);
+    }
+
+    //  右面，重合
+    function coincideRight(circumscriptionData, item, data){
+        //  棋子将 预 向右移动一格
+        const rightData = getItemPosition(data);
+        rightData.left++;
+        rightData.right++;
+        //  被循环的棋子的位置
+        const itemData = getItemPosition(item);
+        return coincide(itemData, rightData);
+    }
+
+    function getItemPosition(item){
+        return {
+            left: item.position[0],
+            right: item.position[0] + item.placeEnd[0],
+            bottom: item.position[1] + item.placeEnd[1],
+            top: item.position[1],
+        };
+    }
+
+    //  重合条件
+    function coincide(basic, data){
+        return !(
+            basic.top < data.bottom &&
+            basic.bottom > data.top &&
+            basic.left < data.right
+            && basic.right > data.left
+        );
+    }
+
+    //  被击中的高亮
+    function highlight(el){
+        if (el.className === el.basicClassName) {
+            const prev = document.getElementsByClassName('highlight')[0];
+            prev && (prev.className = prev.basicClassName);
+            el.className = `${el.className} highlight`;
+            return true;
+        }
+        el.className = el.basicClassName;
+        return false;
+    }
+
+    window.onload = function (){
+
+        function createMap(el, arr){
+            arr.forEach((item, index) => {
+                const div = document.createElement('div');
+                div.innerHTML = item.name;
+                div.className = item.className;
+                div.basicClassName = item.className;
+                div.position = item.position;
+                div.placeEnd = item.placeEnd;
+                div.index = index;
+                const style = div.style;
+                style.left = `${item.position[0] * basicPositionRate}px`;
+                style.top = `${item.position[1] * basicPositionRate}px`;
+                el.appendChild(div);
+            });
+        }
+
+        createMap(wrap, basicData);
+    };
+    document.ondblclick = preventDefault;
+    document.onmousemove = preventDefault;
+    document.onclick = function (e){
+        const target = e.target;
+        if (!target.className) {
+            return;
+        }
+        const isHighLight = highlight(target);
+        removeOptionDiv();
+        if (!isHighLight) {
+            return;
+        }
+        //  执行
+        if (target.type === 'option') {
+            moveClickOrigin(target.clickOrigin, target.position);
+            return;
+        }
+        const circumscriptionData = circumscription(basicData[target.index]);
+        const resultData = circulationPosition(basicData, target.index, circumscriptionData);
+        // console.table(resultData);
+        // console.log(target);
+        addOptionDiv(resultData, target);
+    };
+
+    function moveClickOrigin(clickOrigin, targetPosition){
+        const clickOriginStyle = clickOrigin.style;
+        clickOriginStyle.top = `${targetPosition[1] * basicPositionRate}px`;
+        clickOriginStyle.left = `${targetPosition[0] * basicPositionRate}px`;
+        clickOrigin.position[0] = targetPosition[0];
+        clickOrigin.position[1] = targetPosition[1];
+    }
+
+    //  删除选择的div
+    function removeOptionDiv(){
+        const optiondiv = document.getElementsByClassName('optiondiv');
+        if (!optiondiv || !optiondiv.length) {
+            return;
+        }
+        while (optiondiv.length) {
+            wrap.removeChild(optiondiv[0]);
+        }
+    }
+
+    //  新建选择的div
+    function addOptionDiv(option, siblings){
+        const PlaceEnd = siblings.placeEnd;
+        Reflect.ownKeys(option).forEach(item => {
+            if (!option[item]) {
+                return;
+            }
+            // console.log(item);
+            const position = [siblings.position[0], siblings.position[1]];
+            switch (item) {
+                case 'top':
+                    position[1]--;
+                    break;
+                case 'bottom':
+                    position[1]++;
+                    break;
+                case 'left':
+                    position[0]--;
+                    break;
+                case 'right':
+                    position[0]++;
+                    break;
+                default:
+                    throw new Error(`错误的类型${item}`);
+            }
+            // console.log(siblings.position);
+            // console.log(siblings.placeEnd);
+            // console.log(position);
+            const optionDiv = document.createElement('div');
+            optionDiv.className = 'optiondiv';
+            optionDiv.basicClassName = 'optiondiv';
+            optionDiv.type = 'option';
+            const optionDivStyle = optionDiv.style;
+            optionDivStyle.width = `${PlaceEnd[0] * basicPositionRate}px`;
+            optionDivStyle.height = `${PlaceEnd[1] * basicPositionRate}px`;
+
+            optionDivStyle.left = `${position[0] * basicPositionRate}px`;
+            optionDivStyle.top = `${position[1] * basicPositionRate}px`;
+
+            optionDiv.position = position;
+            optionDiv.clickOrigin = siblings;
+            wrap.appendChild(optionDiv);
+        });
+    }
+</script>
+</body>
+</html>
+<!--    <div class="caocao">曹操</div>-->
+<!--    <div class="zhangfei">张飞</div>-->
+<!--    <div class="guanyu">关<br>羽</div>-->
+<!--    <div class="zhaoyun">赵<br>云</div>-->
+<!--    <div class="machao">马<br>超</div>-->
+<!--    <div class="huangzhong">黄<br>忠</div>-->
+<!--    <div class="bing">兵</div>-->
+<!--    <div class="bing">兵</div>-->
+<!--    <div class="bing">兵</div>-->
+<!--    <div class="bing">兵</div>-->

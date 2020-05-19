@@ -1,0 +1,513 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport"
+          content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>华容道</title>
+    <style>
+        #wrap {
+            margin: 20px auto;
+            width: 240px;
+            height: 300px;
+            outline: 1px solid crimson;
+            border-radius: 8px;
+            position: relative;
+        }
+        
+        #wrap > div {
+            cursor: pointer;
+            text-align: center;
+            border-radius: 10px;
+            border: 1px solid orange;
+            background-color: #ab9688;
+            box-sizing: border-box;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            position: absolute;
+            z-index: +2;
+        }
+        
+        
+        /*敷*/
+        #wrap > div:hover {
+            background-color: #c9b0a0;
+        }
+        
+        /*高亮*/
+        #wrap > div.highlight {
+            border: 2px solid skyblue;
+            background-color: #ddc2b0;
+        }
+        
+        
+        .zhangfei, .bing {
+            height: 60px;
+            font-size: 20px;
+        }
+        
+        .bing, .guanyu, .zhaoyun, .huangzhong, .machao {
+            width: 60px;
+            font-size: 20px;
+        }
+        
+        .caocao, .guanyu, .zhaoyun, .huangzhong, .machao {
+            height: 120px;
+            font-size: 30px;
+        }
+        
+        .caocao, .zhangfei {
+            width: 120px;
+            font-size: 40px;
+        }
+        
+        .zhangfei {
+            font-size: 30px;
+        }
+        
+        #wrap > .optiondiv {
+            border: none;
+            animation: james infinite 4s;
+            z-index: 1;
+        }
+        
+        @keyframes james {
+            0% {
+                background-color: white;
+            }
+            50% {
+                background-color: #ffd3cf;
+            }
+            100% {
+                background-color: white;
+            }
+        }
+    </style>
+</head>
+<body>
+<div id="wrap">
+</div>
+<script>
+    const basicData = [
+        {
+            name: '曹操',
+            className: 'caocao',
+            position: [1, 0],
+            placeEnd: [2, 2]
+        },
+        {
+            name: '张飞',
+            className: 'zhangfei',
+            position: [1, 2],
+            placeEnd: [2, 1]
+        },
+        {
+            name: '关<br>羽',
+            className: 'guanyu',
+            position: [0, 0],
+            placeEnd: [1, 2]
+        },
+        {
+            name: '赵<br>云',
+            className: 'zhaoyun',
+            position: [3, 0],
+            placeEnd: [1, 2]
+        },
+        {
+            name: '黄<br>忠',
+            className: 'huangzhong',
+            position: [0, 2],
+            placeEnd: [1, 2]
+        },
+        {
+            name: '马<br>超',
+            className: 'machao',
+            position: [3, 2],
+            placeEnd: [1, 2]
+        },
+        {
+            name: '兵1',
+            className: 'bing',
+            position: [0, 4],
+            placeEnd: [1, 1]
+        },
+        {
+            name: '兵2',
+            className: 'bing',
+            position: [1, 3],
+            placeEnd: [1, 1]
+        },
+        {
+            name: '兵3',
+            className: 'bing',
+            position: [2, 3],
+            placeEnd: [1, 1]
+        },
+        {
+            name: '兵4',
+            className: 'bing',
+            position: [3, 4],
+            placeEnd: [1, 1]
+        },
+    ];
+
+    const basicPositionRate = 60;
+
+    //  鼠标点击到某个块的，可以去哪里的数据
+    let aimCircumscriptionData = {
+        left: false,
+        top: false,
+        right: false,
+        bottom: false,
+    };
+
+    //  鼠标点击到某个块的，相对于这个块的位置
+    let aimPosData = getNewAimPosData();
+
+    //  棋盘的位置
+    const wrapPosData = {
+        x: wrap.offsetLeft,
+        y: wrap.offsetTop
+    };
+
+    function preventDefault(e){
+        e.stopPropagation();
+        e.preventDefault();
+    }
+
+    //  判断边界
+    function circumscription(data){
+        // console.log(data);
+        const circumscriptionData = {};
+        //  上
+        circumscriptionData.top = (data.position[1] > 0);
+        //  下
+        circumscriptionData.bottom = (data.position[1] + data.placeEnd[1] < 5);
+        //  左
+        circumscriptionData.left = (data.position[0] > 0);
+        //  右
+        circumscriptionData.right = (data.position[0] + data.placeEnd[0] < 4);
+        return circumscriptionData;
+    }
+
+    /**
+     *遍历棋子的位置,判断重合
+     * @circumscriptionData:Object : 能够移动的位置
+     *
+     * */
+    function circulationPosition(arr, index, circumscriptionData){
+        const data = arr[index];
+        const circulationArr = arr.slice(0, index).concat(arr.slice(index + 1));
+        // console.log(data);
+        // console.log(circumscriptionData);
+        //  结果，上下左右
+        const resultData = { top: true, bottom: true, left: true, right: true };
+        circulationArr.forEach(item => {
+            //  如果没有超过上边界
+            if (resultData.top) {
+                resultData.top = circumscriptionData.top && coincideTop(circumscriptionData, item, data);
+            }
+            //  下
+            if (resultData.bottom) {
+                resultData.bottom = circumscriptionData.bottom && coincideBottom(circumscriptionData, item, data);
+            }
+            //  左
+            if (resultData.left) {
+                resultData.left = circumscriptionData.left && coincideLeft(circumscriptionData, item, data);
+            }
+            //  右
+            if (resultData.right) {
+                resultData.right = circumscriptionData.right && coincideRight(circumscriptionData, item, data);
+            }
+        });
+        return resultData;
+    }
+
+    //  上，重合
+    function coincideTop(circumscriptionData, item, data){
+        //  棋子将 预 向上移动一格
+        const upData = getItemPosition(data);
+        upData.top--;
+        upData.bottom--;
+        //  被循环的棋子的位置
+        const itemData = getItemPosition(item);
+        return coincide(itemData, upData);
+    }
+
+    //  下，重合
+    function coincideBottom(circumscriptionData, item, data){
+        //  棋子将 预 向下移动一格
+        const downData = getItemPosition(data);
+        downData.top++;
+        downData.bottom++;
+        //  被循环的棋子的位置
+        const itemData = getItemPosition(item);
+        return coincide(itemData, downData);
+    }
+
+    //  左，重合
+    function coincideLeft(circumscriptionData, item, data){
+        //  棋子将 预 向左移动一格
+        const leftData = getItemPosition(data);
+        leftData.left--;
+        leftData.right--;
+        //  被循环的棋子的位置
+        const itemData = getItemPosition(item);
+        return coincide(itemData, leftData);
+    }
+
+    //  右面，重合
+    function coincideRight(circumscriptionData, item, data){
+        //  棋子将 预 向右移动一格
+        const rightData = getItemPosition(data);
+        rightData.left++;
+        rightData.right++;
+        //  被循环的棋子的位置
+        const itemData = getItemPosition(item);
+        return coincide(itemData, rightData);
+    }
+
+    function getItemPosition(item){
+        return {
+            left: item.position[0],
+            right: item.position[0] + item.placeEnd[0],
+            bottom: item.position[1] + item.placeEnd[1],
+            top: item.position[1],
+        };
+    }
+
+    //  重合条件
+    function coincide(basic, data){
+        return !(
+            basic.top < data.bottom &&
+            basic.bottom > data.top &&
+            basic.left < data.right
+            && basic.right > data.left
+        );
+    }
+
+    //  注销移动事件
+    function removeMouseMove(){
+        wrap.onmousemove = null;
+    }
+
+    function getNewAimPosData(){
+        return {
+            startX: 0,
+            startY: 0,
+
+            el: null,
+
+            prevX: 0,
+            prevY: 0
+        };
+    }
+
+    //  鼠标移除
+    function mouseLeaveOrUp(e){
+        document.onmousemove = null;
+        document.onmouseup = null;
+        wrap.onmouseleave = null;
+        removeMouseMove(e);
+        //  纠正位置
+        correctPos();
+    }
+
+    // 鼠标移动事件
+    function mouseMoveFn(e){
+        preventDefault(e);
+        const target = e.target;
+        if (!target.className && !target.id) {
+            removeMouseMove();
+            return false;
+        }
+        //  被拖动的div的style
+        const moveTarget = aimPosData.el;
+        // console.log('被拖动的div的');
+        moveTarget.moveX = moveTarget.moveX || 0;
+        moveTarget.moveY = moveTarget.moveY || 0;
+        const targetStyle = moveTarget.style;
+
+        //  每一次都重新计算
+        (() => {
+            const circumscriptionData = {
+                top: true,
+                left: true,
+                right: true,
+                bottom: true,
+            };
+            aimCircumscriptionData = circulationPosition(basicData, moveTarget.index, circumscriptionData);
+            // console.table(aimCircumscriptionData);
+        })();
+
+        //  左右的差距
+        const diffX = e.x - aimPosData.prevX;
+        const diffY = e.y - aimPosData.prevY;
+
+        //  移动太猛了
+        if (Math.abs(diffX) > basicPositionRate * 0.5 || Math.abs(diffY) > basicPositionRate * 0.5) {
+            // aimPosData.prevX = e.x;
+            // aimPosData.prevY = e.y;
+            return;
+        }
+        //  方向
+        const isToLeft = diffX < 0;
+        const isToTop = diffY < 0;
+
+        //  是左右移动
+        if (Math.abs(diffX) > Math.abs(diffY)) {
+            //  可以向左
+            if (aimCircumscriptionData.left) {
+                if (isToLeft) {
+                    moveTarget.moveX = e.x - wrapPosData.x - aimPosData.startX;
+                    getMoveLimitX();
+                    targetStyle.left = `${moveTarget.moveX}px`;
+                }
+            }
+            //  可以向右
+            if (aimCircumscriptionData.right) {
+                if (!isToLeft) {
+                    // console.log(e.x - wrapPosData.x);
+                    // console.log(!isToLeft, aimCircumscriptionData.right);
+                    moveTarget.moveX = e.x - wrapPosData.x - aimPosData.startX;
+                    getMoveLimitX();
+                    targetStyle.left = `${moveTarget.moveX}px`;
+                }
+            }
+        } else {
+            //  可以向上
+            if (aimCircumscriptionData.top) {
+                if (isToTop) {
+                    // console.log('向上', aimCircumscriptionData.top, isToTop);
+                    moveTarget.moveY = e.y - wrapPosData.y - aimPosData.startY;
+                    getMoveLimitY();
+                    targetStyle.top = `${moveTarget.moveY}px`;
+                }
+            }
+            //  可以向下
+            if (aimCircumscriptionData.bottom) {
+                if (!isToTop) {
+                    // console.log(isToTop, aimCircumscriptionData.top);
+                    moveTarget.moveY = e.y - wrapPosData.y - aimPosData.startY;
+                    getMoveLimitY();
+                    targetStyle.top = `${moveTarget.moveY}px`;
+                    // console.log('向下', !isToTop, moveTarget.moveY);
+                }
+            }
+        }
+        aimPosData.prevX = e.x;
+        aimPosData.prevY = e.y;
+
+        (() => {
+            const circumscriptionData = {
+                top: true,
+                left: true,
+                right: true,
+                bottom: true,
+            };
+            aimCircumscriptionData = circulationPosition(basicData, moveTarget.index, circumscriptionData);
+        })();
+    }
+
+    // 获取限界X
+    function getMoveLimitX(){
+        const moveTarget = aimPosData.el;
+        if (!moveTarget) {
+            return false;
+        }
+        moveTarget.moveX = Math.max(moveTarget.moveX, 0);
+        moveTarget.moveX = Math.min(moveTarget.moveX, 4 * basicPositionRate - aimPosData.el.placeEnd[0]);
+        aimPosData.el.position[0] = moveTarget.moveX;
+    }
+
+    // 获取限界Y
+    function getMoveLimitY(){
+        const moveTarget = aimPosData.el;
+        if (!moveTarget) {
+            return false;
+        }
+        moveTarget.moveY = Math.max(moveTarget.moveY, 0);
+        moveTarget.moveY = Math.min(moveTarget.moveY, 5 * basicPositionRate - aimPosData.el.placeEnd[1]);
+        aimPosData.el.position[1] = moveTarget.moveY;
+    }
+
+    //  纠正位置
+    function correctPos(){
+        console.log('纠正位置');
+        const moveTarget = aimPosData.el;
+        if (!moveTarget) {
+            return false;
+        }
+        moveTarget.zIndex = 2;
+        // console.log(moveTarget.moveX);
+        // console.log(moveTarget.moveY);
+        if (moveTarget.moveY % basicPositionRate !== 0) {
+            // console.log(moveTarget.moveY);
+            moveTarget.moveY = Math.floor(moveTarget.moveY / basicPositionRate + 0.5) * basicPositionRate;
+            aimPosData.el.position[1] = moveTarget.moveY;
+            console.log(moveTarget.moveY);
+            aimPosData.el.style.top = `${moveTarget.moveY}px`;
+        } else if (moveTarget.moveX % basicPositionRate !== 0) {
+            // console.log(moveTarget.moveX);
+            moveTarget.moveX = Math.floor(moveTarget.moveX / basicPositionRate + 0.5) * basicPositionRate;
+            aimPosData.el.position[0] = moveTarget.moveX;
+            // console.log(moveTarget.moveX);
+            aimPosData.el.style.left = `${moveTarget.moveX}px`;
+        }
+    }
+
+    //  鼠标按下
+    wrap.onmousedown = function (e){
+        const target = e.target;
+        // console.log(e.currentTarget);
+        if (!target.className) {
+            return false;
+        }
+        target.style.zIndex = 3;
+        //  可以移动的位置
+        const circumscriptionData = circumscription(basicData[target.index]);
+        aimCircumscriptionData = circulationPosition(basicData, target.index, circumscriptionData);
+        //  给这个位置赋值
+        // console.log(e);
+        aimPosData.startX = e.offsetX;
+        aimPosData.startY = e.offsetY;
+        aimPosData.prevX = e.x;
+        aimPosData.prevY = e.y;
+        aimPosData.el = target;
+
+        wrap.onmousemove = mouseMoveFn;
+        wrap.onmouseleave = mouseLeaveOrUp;
+        document.onmouseup = mouseLeaveOrUp;
+    };
+    wrap.onmouseleave = mouseLeaveOrUp;
+    document.onmouseup = mouseLeaveOrUp;
+    document.onmousedown = preventDefault;
+    window.onload = function (){
+        function createMap(el, arr){
+            arr.forEach((item, index) => {
+                const div = document.createElement('div');
+                div.innerHTML = item.name;
+                div.className = item.className;
+                div.basicClassName = item.className;
+                div.position = item.position;
+                div.placeEnd = item.placeEnd;
+                div.index = index;
+                const style = div.style;
+                item.position[0] *= basicPositionRate;
+                item.position[1] *= basicPositionRate;
+
+                item.placeEnd [0] *= basicPositionRate;
+                item.placeEnd [1] *= basicPositionRate;
+                style.left = `${item.position[0]}px`;
+                style.top = `${item.position[1]}px`;
+                el.appendChild(div);
+            });
+        }
+
+        createMap(wrap, basicData);
+    };
+</script>
+</body>
+</html>
